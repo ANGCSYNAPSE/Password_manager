@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Credential Vault</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="header">
+      <div class="logo">🔐</div>
+      <div>
+        <h1>Credential Vault</h1>
+        <p id="status">Loading...</p>
+      </div>
+    </div>
+
+    <div id="setup" class="setup hidden">
+      <p class="hint">
+        Enter your vault URL and API token from the web app (Extension panel).
+      </p>
+      <input id="vaultUrl" type="url" placeholder="http://localhost:3000" />
+      <input id="apiToken" type="password" placeholder="API Token" />
+      <button id="saveConfig" class="btn primary">Connect</button>
+      <a href="options.html" target="_blank" class="link">Open Settings</a>
+    </div>
+
+    <div id="searchBar" class="search hidden">
+      <input id="searchInput" type="text" placeholder="Search credentials..." />
+    </div>
+
+    <div id="credentialList" class="list"></div>
+
+    <div class="footer">
+      <button id="refreshBtn" class="btn ghost hidden">Refresh</button>
+      <button id="openVault" class="btn ghost">Open Vault</button>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Credential Vault — Settings</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 480px;
+        margin: 40px auto;
+        padding: 0 20px;
+        background: #0f172a;
+        color: #f1f5f9;
+      }
+      h1 { font-size: 20px; margin-bottom: 8px; }
+      p { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
+      label { display: block; font-size: 13px; margin-bottom: 6px; color: #cbd5e1; }
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        margin-bottom: 16px;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #f1f5f9;
+      }
+      button {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        background: #7c3aed;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .saved { color: #34d399; margin-top: 12px; font-size: 13px; display: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Extension Settings</h1>
+    <p>Connect to your local Credential Vault instance.</p>
+    <label>Vault URL</label>
+    <input id="vaultUrl" type="url" placeholder="http://localhost:3000" />
+    <label>API Token</label>
+    <input id="apiToken" type="password" placeholder="Paste token from vault" />
+    <button id="save">Save Settings</button>
+    <p class="saved" id="saved">Settings saved!</p>
+    <script src="options.js"></script>
+  </body>
+</html>
