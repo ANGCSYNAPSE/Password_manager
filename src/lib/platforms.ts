@@ -40,8 +40,13 @@ export const PLATFORMS: PlatformOption[] = [
   { id: "bitwarden", label: "Bitwarden", color: "#175DDC" },
   { id: "1password", label: "1Password", color: "#0094F5" },
   { id: "lastpass", label: "LastPass", color: "#D32D27" },
-  { id: "custom", label: "Custom", color: "#6366F1" },
+  { id: "hostinger", label: "Hostinger", color: "#673DE6" },
+  { id: "godaddy", label: "GoDaddy", color: "#1BDBDB" },
+  { id: "claude", label: "Claude AI", color: "#D97757" },
+  { id: "other", label: "Other", color: "#6366F1" },
 ];
+
+export const OTHER_PLATFORM_ID = "other";
 
 export const CREDENTIAL_TYPES = [
   { id: "username_password", label: "Username + Password" },
@@ -51,6 +56,30 @@ export const CREDENTIAL_TYPES = [
   { id: "other", label: "Other" },
 ] as const;
 
+export function normalizePlatformId(id: string): string {
+  return id === "custom" ? OTHER_PLATFORM_ID : id;
+}
+
+export function isOtherPlatform(id: string): boolean {
+  const normalized = normalizePlatformId(id);
+  return normalized === OTHER_PLATFORM_ID;
+}
+
 export function getPlatform(id: string): PlatformOption {
-  return PLATFORMS.find((p) => p.id === id) ?? PLATFORMS[PLATFORMS.length - 1];
+  const normalized = normalizePlatformId(id);
+  return (
+    PLATFORMS.find((p) => p.id === normalized) ??
+    PLATFORMS.find((p) => p.id === OTHER_PLATFORM_ID)!
+  );
+}
+
+export function getPlatformDisplayName(
+  platformId: string,
+  customPlatformName?: string | null,
+): string {
+  if (isOtherPlatform(platformId)) {
+    const name = customPlatformName?.trim();
+    return name || "Other";
+  }
+  return getPlatform(platformId).label;
 }

@@ -14,11 +14,19 @@ import {
   Shield,
   Trash2,
 } from "lucide-react";
+import { useTheme } from "@/components/theme-provider";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CredentialModal from "./CredentialModal";
 import PlatformIcon from "./PlatformIcon";
-import { CREDENTIAL_TYPES, getPlatform, PLATFORMS } from "@/lib/platforms";
+import GradientWaves from "./ui/gradient-waves";
+import { ThemeToggle } from "./ui/theme-toggle";
+import {
+  CREDENTIAL_TYPES,
+  getPlatform,
+  getPlatformDisplayName,
+  PLATFORMS,
+} from "@/lib/platforms";
 import type { Credential, CredentialInput } from "@/lib/types";
 
 interface VaultDashboardProps {
@@ -27,6 +35,8 @@ interface VaultDashboardProps {
 
 export default function VaultDashboard({ username }: VaultDashboardProps) {
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -133,29 +143,49 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
   }
 
   return (
-    <div className="relative min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-slate-950/70 backdrop-blur-xl">
+    <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="fixed inset-0 z-0">
+        <GradientWaves
+          horizonColor={isDark ? "#020617" : "#f8fafc"}
+          waveColor={isDark ? "#475569" : "#cbd5e1"}
+          crestColor={isDark ? "#94a3b8" : "#ffffff"}
+          speed={0.3}
+          amplitude={2}
+          waveScale={0.6}
+          waveRatio={0.9}
+          swell={30}
+          turbulence={15}
+          brightness={1}
+          opacity={0.45}
+          detail="low"
+          mouseInteraction={false}
+          grain
+          grainIntensity={0.03}
+        />
+      </div>
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-cyan-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-900">
               <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">Credential Vault</h1>
-              <p className="text-xs text-slate-400">Welcome, {username}</p>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-white">Credential Vault</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Welcome, {username}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <button
               onClick={() => setShowExtensionPanel(!showExtensionPanel)}
-              className="flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-white/5"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
             >
               <Puzzle className="h-4 w-4" />
               Extension
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-white/5"
+              className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
             >
               <LogOut className="h-4 w-4" />
               Logout
@@ -170,12 +200,12 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden border-b border-white/5 bg-violet-500/5"
+            className="relative z-10 overflow-hidden border-b border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5"
           >
             <div className="mx-auto max-w-7xl px-6 py-4">
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-slate-600 dark:text-slate-300">
                 Generate an API token for the browser extension. Load the{" "}
-                <code className="rounded bg-white/10 px-1.5 py-0.5 text-xs">
+                <code className="rounded bg-slate-900/5 px-1.5 py-0.5 text-xs dark:bg-white/10">
                   extension/
                 </code>{" "}
                 folder in Chrome → Extensions → Load unpacked.
@@ -187,7 +217,7 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
                   </code>
                   <button
                     onClick={() => copyText(extensionToken, "token")}
-                    className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white"
+                    className="rounded-lg bg-slate-900/10 px-3 py-2 text-xs text-slate-900 dark:bg-white/10 dark:text-white"
                   >
                     {copiedId === "token" ? "Copied!" : "Copy"}
                   </button>
@@ -195,7 +225,7 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
               ) : (
                 <button
                   onClick={generateExtensionToken}
-                  className="mt-3 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
+                  className="mt-3 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
                 >
                   Generate Extension Token
                 </button>
@@ -205,7 +235,7 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
         )}
       </AnimatePresence>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="relative z-10 mx-auto max-w-7xl px-6 py-8">
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
           {[
             { label: "Total Credentials", value: stats.total },
@@ -217,12 +247,12 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm"
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5"
             >
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 {stat.label}
               </p>
-              <p className="mt-1 text-2xl font-bold text-white">{stat.value}</p>
+              <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{stat.value}</p>
             </motion.div>
           ))}
         </div>
@@ -230,19 +260,19 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-1 flex-wrap items-center gap-3">
             <div className="relative min-w-[200px] flex-1 lg:max-w-xs">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search credentials..."
-                className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-violet-500/50 focus:outline-none"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-slate-500"
               />
             </div>
             <select
               value={platformFilter}
               onChange={(e) => setPlatformFilter(e.target.value)}
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white focus:outline-none"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
             >
               <option value="all">All Platforms</option>
               {PLATFORMS.map((p) => (
@@ -254,7 +284,7 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white focus:outline-none"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
             >
               <option value="all">All Types</option>
               {CREDENTIAL_TYPES.map((t) => (
@@ -271,23 +301,23 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
               setEditing(null);
               setModalOpen(true);
             }}
-            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/20"
+            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-slate-800 to-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 dark:from-slate-100 dark:to-slate-300 dark:text-slate-900"
           >
             <Plus className="h-4 w-4" />
             Add Credential
           </motion.button>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px]">
               <thead>
-                <tr className="border-b border-white/10 bg-white/[0.02]">
+                <tr className="border-b border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/[0.02]">
                   {["Platform", "Account", "Secret", "Description", "Type", "Actions"].map(
                     (h) => (
                       <th
                         key={h}
-                        className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500"
+                        className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400"
                       >
                         {h}
                       </th>
@@ -298,20 +328,20 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-5 py-16 text-center text-slate-500">
+                    <td colSpan={6} className="px-5 py-16 text-center text-slate-500 dark:text-slate-400">
                       Loading credentials...
                     </td>
                   </tr>
                 ) : credentials.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">
-                      <p className="text-slate-400">No credentials found</p>
+                      <p className="text-slate-500 dark:text-slate-400">No credentials found</p>
                       <button
                         onClick={() => {
                           setEditing(null);
                           setModalOpen(true);
                         }}
-                        className="mt-3 text-sm text-violet-400 hover:text-violet-300"
+                        className="mt-3 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                       >
                         Add your first credential
                       </button>
@@ -321,6 +351,10 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
                   <AnimatePresence>
                     {credentials.map((cred, index) => {
                       const platform = getPlatform(cred.platform);
+                      const platformLabel = getPlatformDisplayName(
+                        cred.platform,
+                        cred.custom_platform_name,
+                      );
                       const typeLabel =
                         CREDENTIAL_TYPES.find((t) => t.id === cred.credential_type)
                           ?.label || cred.credential_type;
@@ -333,21 +367,25 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0 }}
                           transition={{ delay: index * 0.03 }}
-                          className="group border-b border-white/5 transition-colors hover:bg-white/[0.03]"
+                          className="group border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-white/5 dark:hover:bg-white/[0.03]"
                         >
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
-                              <PlatformIcon platform={cred.platform} size="sm" />
+                              <PlatformIcon
+                                platform={cred.platform}
+                                customLabel={cred.custom_platform_name}
+                                size="sm"
+                              />
                               <div>
-                                <p className="font-medium text-white">
-                                  {platform.label}
+                                <p className="font-medium text-slate-900 dark:text-white">
+                                  {platformLabel}
                                 </p>
                                 {cred.website_url && (
                                   <a
                                     href={cred.website_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-xs text-slate-500 hover:text-cyan-400"
+                                    className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300"
                                   >
                                     Visit
                                     <ExternalLink className="h-3 w-3" />
@@ -357,21 +395,21 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
                             </div>
                           </td>
                           <td className="px-5 py-4">
-                            <p className="font-mono text-sm text-slate-200">
+                            <p className="font-mono text-sm text-slate-700 dark:text-slate-200">
                               {getPrimaryLabel(cred)}
                             </p>
                             {cred.username && cred.email && (
-                              <p className="text-xs text-slate-500">{cred.email}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-500">{cred.email}</p>
                             )}
                           </td>
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-2">
-                              <span className="max-w-[140px] truncate font-mono text-sm text-slate-300">
+                              <span className="max-w-[140px] truncate font-mono text-sm text-slate-600 dark:text-slate-300">
                                 {isVisible ? cred.password : "••••••••••••"}
                               </span>
                               <button
                                 onClick={() => togglePassword(cred.id)}
-                                className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-white"
+                                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-500 dark:hover:bg-white/5 dark:hover:text-white"
                               >
                                 {isVisible ? (
                                   <EyeOff className="h-3.5 w-3.5" />
@@ -381,22 +419,22 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
                               </button>
                               <button
                                 onClick={() => copyText(cred.password, cred.id)}
-                                className="rounded p-1 text-slate-500 hover:bg-white/5 hover:text-white"
+                                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-500 dark:hover:bg-white/5 dark:hover:text-white"
                               >
                                 <Copy className="h-3.5 w-3.5" />
                               </button>
                               {copiedId === cred.id && (
-                                <span className="text-xs text-emerald-400">Copied</span>
+                                <span className="text-xs text-emerald-600 dark:text-emerald-400">Copied</span>
                               )}
                             </div>
                           </td>
                           <td className="max-w-[200px] px-5 py-4">
-                            <p className="truncate text-sm text-slate-400">
+                            <p className="truncate text-sm text-slate-500 dark:text-slate-400">
                               {cred.description || "—"}
                             </p>
                           </td>
                           <td className="px-5 py-4">
-                            <span className="inline-flex rounded-lg bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300">
+                            <span className="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
                               {typeLabel}
                             </span>
                           </td>
@@ -407,14 +445,14 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
                                   setEditing(cred);
                                   setModalOpen(true);
                                 }}
-                                className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white"
+                                className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white"
                                 title="Edit"
                               >
                                 <Pencil className="h-4 w-4" />
                               </button>
                               <button
                                 onClick={() => handleDelete(cred.id)}
-                                className="rounded-lg p-2 text-slate-400 hover:bg-red-500/10 hover:text-red-400"
+                                className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                                 title="Delete"
                               >
                                 <Trash2 className="h-4 w-4" />

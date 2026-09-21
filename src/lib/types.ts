@@ -8,6 +8,7 @@ export type CredentialType =
 export interface Credential {
   id: string;
   platform: string;
+  custom_platform_name: string | null;
   credential_type: CredentialType;
   username: string | null;
   email: string | null;
@@ -21,6 +22,7 @@ export interface Credential {
 export interface CredentialRow {
   id: string;
   platform: string;
+  custom_platform_name: string | null;
   credential_type: CredentialType;
   username: string | null;
   email: string | null;
@@ -33,6 +35,7 @@ export interface CredentialRow {
 
 export interface CredentialInput {
   platform: string;
+  custom_platform_name?: string;
   credential_type: CredentialType;
   username?: string;
   email?: string;

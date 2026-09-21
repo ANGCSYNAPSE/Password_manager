@@ -1,9 +1,17 @@
 "use client";
 
+import { BiLogoHeroku } from "react-icons/bi";
 import {
-  SiAmazon,
+  FaAmazon,
+  FaAws,
+  FaKey,
+  FaLinkedin,
+  FaMicrosoft,
+  FaSlack,
+  FaYahoo,
+} from "react-icons/fa";
+import {
   SiApple,
-  SiAzuredevops,
   SiBitwarden,
   SiCloudflare,
   SiDigitalocean,
@@ -12,51 +20,49 @@ import {
   SiDropbox,
   SiFacebook,
   SiFigma,
+  SiClaude,
   SiGithub,
   SiGitlab,
   SiGmail,
+  SiGodaddy,
   SiGoogle,
-  SiHeroku,
+  SiHostinger,
   SiInstagram,
   SiLastpass,
-  SiLinkedin,
   SiMongodb,
   SiMysql,
   SiNetflix,
   SiNotion,
-  SiOnepassword,
-  SiOutlook,
   SiPaypal,
   SiPostgresql,
   SiProtonmail,
   SiRedis,
   SiShopify,
-  SiSlack,
   SiSpotify,
   SiStripe,
   SiVercel,
   SiWordpress,
   SiX,
-  SiYahoo,
 } from "react-icons/si";
-import { FaAws, FaKey } from "react-icons/fa";
-import { getPlatform } from "@/lib/platforms";
+import { getPlatform, isOtherPlatform } from "@/lib/platforms";
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+type IconComponent = React.ComponentType<{ className?: string }>;
+
+const ICON_MAP: Record<string, IconComponent> = {
   google: SiGoogle,
   github: SiGithub,
   gitlab: SiGitlab,
-  microsoft: SiOutlook,
+  microsoft: FaMicrosoft,
   apple: SiApple,
-  amazon: SiAmazon,
+  amazon: FaAmazon,
   aws: FaAws,
-  azure: SiAzuredevops,
+  azure: FaMicrosoft,
   facebook: SiFacebook,
   instagram: SiInstagram,
   twitter: SiX,
-  linkedin: SiLinkedin,
+  linkedin: FaLinkedin,
   discord: SiDiscord,
-  slack: SiSlack,
+  slack: FaSlack,
   notion: SiNotion,
   figma: SiFigma,
   stripe: SiStripe,
@@ -68,7 +74,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   vercel: SiVercel,
   cloudflare: SiCloudflare,
   digitalocean: SiDigitalocean,
-  heroku: SiHeroku,
+  heroku: BiLogoHeroku,
   mongodb: SiMongodb,
   postgresql: SiPostgresql,
   mysql: SiMysql,
@@ -76,23 +82,33 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   wordpress: SiWordpress,
   shopify: SiShopify,
   gmail: SiGmail,
-  outlook: SiOutlook,
-  yahoo: SiYahoo,
+  outlook: FaMicrosoft,
+  yahoo: FaYahoo,
   protonmail: SiProtonmail,
   bitwarden: SiBitwarden,
-  "1password": SiOnepassword,
+  "1password": FaKey,
   lastpass: SiLastpass,
+  hostinger: SiHostinger,
+  godaddy: SiGodaddy,
+  claude: SiClaude,
+  other: FaKey,
   custom: FaKey,
 };
 
 interface PlatformIconProps {
   platform: string;
+  customLabel?: string | null;
   size?: "sm" | "md" | "lg";
 }
 
-export default function PlatformIcon({ platform, size = "md" }: PlatformIconProps) {
+export default function PlatformIcon({
+  platform,
+  customLabel,
+  size = "md",
+}: PlatformIconProps) {
   const info = getPlatform(platform);
   const Icon = ICON_MAP[platform] || FaKey;
+  const otherInitial = customLabel?.trim().charAt(0).toUpperCase();
 
   const sizeClasses = {
     sm: "h-8 w-8 text-sm",
@@ -100,13 +116,20 @@ export default function PlatformIcon({ platform, size = "md" }: PlatformIconProp
     lg: "h-12 w-12 text-lg",
   };
 
+  const iconSize =
+    size === "sm" ? "h-4 w-4" : size === "md" ? "h-5 w-5" : "h-6 w-6";
+
   return (
     <div
-      className={`${sizeClasses[size]} flex shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 ring-white/10`}
+      className={`${sizeClasses[size]} flex shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 ring-slate-900/10 dark:ring-white/10`}
       style={{ backgroundColor: `${info.color}18`, color: info.color }}
-      title={info.label}
+      title={customLabel?.trim() || info.label}
     >
-      <Icon className={size === "sm" ? "h-4 w-4" : size === "md" ? "h-5 w-5" : "h-6 w-6"} />
+      {isOtherPlatform(platform) && otherInitial ? (
+        <span className="text-sm font-bold">{otherInitial}</span>
+      ) : (
+        <Icon className={iconSize} />
+      )}
     </div>
   );
 }

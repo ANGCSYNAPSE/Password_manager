@@ -17,6 +17,13 @@ async function saveConfig(vaultUrl, apiToken) {
   });
 }
 
+function getPlatformLabel(cred) {
+  if (cred.platform === "other" || cred.platform === "custom") {
+    return cred.custom_platform_name?.trim() || "Other";
+  }
+  return cred.platform;
+}
+
 function getAccountLabel(cred) {
   if (cred.credential_type === "email_password") return cred.email || "—";
   return cred.username || cred.email || cred.description || "—";
@@ -29,7 +36,9 @@ function renderCredentials(credentials, filter = "") {
   const filtered = credentials.filter((c) => {
     if (!term) return true;
     const haystack = [
+      getPlatformLabel(c),
       c.platform,
+      c.custom_platform_name,
       c.username,
       c.email,
       c.description,
@@ -53,7 +62,7 @@ function renderCredentials(credentials, filter = "") {
         <div class="cred-item" data-id="${cred.id}">
           <div class="cred-icon" style="background:${color}22;color:${color}">${initial}</div>
           <div class="cred-info">
-            <div class="name">${cred.platform}</div>
+            <div class="name">${getPlatformLabel(cred)}</div>
             <div class="account">${getAccountLabel(cred)}</div>
           </div>
           <button class="copy-btn" data-password="${encodeURIComponent(cred.password)}">Copy</button>

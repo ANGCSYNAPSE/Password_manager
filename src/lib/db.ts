@@ -47,6 +47,16 @@ function createDb(): Database.Database {
     );
   `);
 
+  const credentialColumns = database
+    .prepare("PRAGMA table_info(credentials)")
+    .all() as { name: string }[];
+
+  if (!credentialColumns.some((column) => column.name === "custom_platform_name")) {
+    database.exec(
+      "ALTER TABLE credentials ADD COLUMN custom_platform_name TEXT",
+    );
+  }
+
   const adminCount = database
     .prepare("SELECT COUNT(*) as count FROM admin")
     .get() as { count: number };
@@ -79,10 +89,22 @@ export function verifyAdmin(username: string, password: string): boolean {
   return bcrypt.compareSync(password, row.password_hash);
 }
 
+function normalizeCredentialInput(input: CredentialInput) {
+  const platform =
+    input.platform === "custom" ? "other" : input.platform;
+  const custom_platform_name =
+    platform === "other"
+      ? input.custom_platform_name?.trim() || null
+      : null;
+
+  return { platform, custom_platform_name };
+}
+
 export function rowToCredential(row: CredentialRow) {
   return {
     id: row.id,
-    platform: row.platform,
+    platform: row.platform === "custom" ? "other" : row.platform,
+    custom_platform_name: row.custom_platform_name ?? null,
     credential_type: row.credential_type as CredentialType,
     username: row.username,
     email: row.email,
@@ -115,12 +137,13 @@ export function listCredentials(filters?: {
   if (filters?.search) {
     query += ` AND (
       platform LIKE ? OR
+      custom_platform_name LIKE ? OR
       username LIKE ? OR
       email LIKE ? OR
       description LIKE ?
     )`;
     const term = `%${filters.search}%`;
-    params.push(term, term, term, term);
+    params.push(term, term, term, term, term);
   }
 
   query += " ORDER BY updated_at DESC";
@@ -139,16 +162,18 @@ export function getCredential(id: string) {
 export function createCredential(input: CredentialInput) {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const { platform, custom_platform_name } = normalizeCredentialInput(input);
 
   getDb()
     .prepare(
       `INSERT INTO credentials
-       (id, platform, credential_type, username, email, password_encrypted, description, website_url, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (id, platform, custom_platform_name, credential_type, username, email, password_encrypted, description, website_url, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       id,
-      input.platform,
+      platform,
+      custom_platform_name,
       input.credential_type,
       input.username || null,
       input.email || null,
@@ -164,11 +189,13 @@ export function createCredential(input: CredentialInput) {
 
 export function updateCredential(id: string, input: CredentialInput) {
   const now = new Date().toISOString();
+  const { platform, custom_platform_name } = normalizeCredentialInput(input);
 
   getDb()
     .prepare(
       `UPDATE credentials SET
         platform = ?,
+        custom_platform_name = ?,
         credential_type = ?,
         username = ?,
         email = ?,
@@ -179,7 +206,8 @@ export function updateCredential(id: string, input: CredentialInput) {
        WHERE id = ?`,
     )
     .run(
-      input.platform,
+      platform,
+      custom_platform_name,
       input.credential_type,
       input.username || null,
       input.email || null,
