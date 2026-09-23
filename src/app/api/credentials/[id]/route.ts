@@ -14,7 +14,7 @@ async function authorize(request: NextRequest): Promise<boolean> {
 
   const authHeader = request.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
-    return verifyApiToken(authHeader.slice(7));
+    return await verifyApiToken(authHeader.slice(7));
   }
 
   return false;
@@ -29,7 +29,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const credential = getCredential(id);
+  const credential = await getCredential(id);
 
   if (!credential) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -49,7 +49,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = (await request.json()) as CredentialInput;
-    const credential = updateCredential(id, body);
+    const credential = await updateCredential(id, body);
 
     if (!credential) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -73,12 +73,12 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const existing = getCredential(id);
+  const existing = await getCredential(id);
 
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  deleteCredential(id);
+  await deleteCredential(id);
   return NextResponse.json({ success: true });
 }

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const name = String(body.name || "Browser Extension").trim();
     const rawToken = randomBytes(32).toString("hex");
-    const record = createApiToken(name, rawToken);
+    const record = await createApiToken(name, rawToken);
 
     return NextResponse.json({
       token: rawToken,

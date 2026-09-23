@@ -1,92 +1,46 @@
-import Database from "better-sqlite3";
+import { Pool } from "pg";
 import bcrypt from "bcryptjs";
-import { mkdirSync } from "fs";
-import path from "path";
 import type { CredentialInput, CredentialRow, CredentialType } from "./types";
 import { decrypt, encrypt } from "./crypto";
 
-const dataDir = path.join(process.cwd(), "data");
-mkdirSync(dataDir, { recursive: true });
-
-const dbPath = path.join(dataDir, "vault.db");
-
 declare global {
   // eslint-disable-next-line no-var
-  var __vaultDb: Database.Database | undefined;
+  var __vaultDbPool: Pool | undefined;
 }
 
-function createDb(): Database.Database {
-  const database = new Database(dbPath);
-  database.pragma("journal_mode = WAL");
+const connectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_UwcxeE8oD5tH@ep-late-cloud-aq81lis3-pooler.c-8.us-east-1.aws.neon.tech/cred_vault?sslmode=require&channel_binding=require';
 
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS admin (
-      id INTEGER PRIMARY KEY,
-      username TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL
-    );
+function createPool(): Pool {
+  const pool = new Pool({
+    connectionString,
+  });
 
-    CREATE TABLE IF NOT EXISTS credentials (
-      id TEXT PRIMARY KEY,
-      platform TEXT NOT NULL,
-      credential_type TEXT NOT NULL,
-      username TEXT,
-      email TEXT,
-      password_encrypted TEXT NOT NULL,
-      description TEXT,
-      website_url TEXT,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS api_tokens (
-      id TEXT PRIMARY KEY,
-      token_hash TEXT NOT NULL,
-      name TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    );
-  `);
-
-  const credentialColumns = database
-    .prepare("PRAGMA table_info(credentials)")
-    .all() as { name: string }[];
-
-  if (!credentialColumns.some((column) => column.name === "custom_platform_name")) {
-    database.exec(
-      "ALTER TABLE credentials ADD COLUMN custom_platform_name TEXT",
-    );
-  }
-
-  const adminCount = database
-    .prepare("SELECT COUNT(*) as count FROM admin")
-    .get() as { count: number };
-
-  if (adminCount.count === 0) {
-    const username = process.env.ADMIN_USERNAME || "admin";
-    const password = process.env.ADMIN_PASSWORD || "changeme123";
-    const passwordHash = bcrypt.hashSync(password, 12);
-    database
-      .prepare("INSERT INTO admin (username, password_hash) VALUES (?, ?)")
-      .run(username, passwordHash);
-  }
-
-  return database;
+  return pool;
 }
 
-export function getDb(): Database.Database {
-  if (!global.__vaultDb) {
-    global.__vaultDb = createDb();
+export function getPool(): Pool {
+  if (!global.__vaultDbPool) {
+    global.__vaultDbPool = createPool();
   }
-  return global.__vaultDb;
+  return global.__vaultDbPool;
 }
 
-export function verifyAdmin(username: string, password: string): boolean {
-  const row = getDb()
-    .prepare("SELECT password_hash FROM admin WHERE username = ?")
-    .get(username) as { password_hash: string } | undefined;
-
-  if (!row) return false;
-  return bcrypt.compareSync(password, row.password_hash);
+export async function verifyAdmin(username: string, password: string): Promise<boolean> {
+  const pool = getPool();
+  const res = await pool.query("SELECT password_hash FROM admin WHERE username = $1", [username]);
+  
+  if (res.rows.length === 0) {
+      if (username === (process.env.ADMIN_USERNAME || "admin")) {
+          const defaultPassword = process.env.ADMIN_PASSWORD || "changeme123";
+          if (password === defaultPassword) {
+            const passwordHash = bcrypt.hashSync(defaultPassword, 12);
+            await pool.query("INSERT INTO admin (username, password_hash) VALUES ($1, $2)", [username, passwordHash]);
+            return true;
+          }
+      }
+      return false;
+  }
+  return bcrypt.compareSync(password, res.rows[0].password_hash);
 }
 
 function normalizeCredentialInput(input: CredentialInput) {
@@ -100,7 +54,7 @@ function normalizeCredentialInput(input: CredentialInput) {
   return { platform, custom_platform_name };
 }
 
-export function rowToCredential(row: CredentialRow) {
+export function rowToCredential(row: any) {
   return {
     id: row.id,
     platform: row.platform === "custom" ? "other" : row.platform,
@@ -116,61 +70,62 @@ export function rowToCredential(row: CredentialRow) {
   };
 }
 
-export function listCredentials(filters?: {
+export async function listCredentials(filters?: {
   platform?: string;
   credential_type?: string;
   search?: string;
 }) {
+  const pool = getPool();
   let query = "SELECT * FROM credentials WHERE 1=1";
-  const params: string[] = [];
+  const params: any[] = [];
+  let paramIndex = 1;
 
   if (filters?.platform && filters.platform !== "all") {
-    query += " AND platform = ?";
+    query += ` AND platform = $${paramIndex++}`;
     params.push(filters.platform);
   }
 
   if (filters?.credential_type && filters.credential_type !== "all") {
-    query += " AND credential_type = ?";
+    query += ` AND credential_type = $${paramIndex++}`;
     params.push(filters.credential_type);
   }
 
   if (filters?.search) {
     query += ` AND (
-      platform LIKE ? OR
-      custom_platform_name LIKE ? OR
-      username LIKE ? OR
-      email LIKE ? OR
-      description LIKE ?
+      platform ILIKE $${paramIndex} OR
+      custom_platform_name ILIKE $${paramIndex} OR
+      username ILIKE $${paramIndex} OR
+      email ILIKE $${paramIndex} OR
+      description ILIKE $${paramIndex}
     )`;
     const term = `%${filters.search}%`;
-    params.push(term, term, term, term, term);
+    params.push(term);
+    paramIndex++;
   }
 
   query += " ORDER BY updated_at DESC";
 
-  const rows = getDb().prepare(query).all(...params) as CredentialRow[];
-  return rows.map(rowToCredential);
+  const res = await pool.query(query, params);
+  return res.rows.map(rowToCredential);
 }
 
-export function getCredential(id: string) {
-  const row = getDb()
-    .prepare("SELECT * FROM credentials WHERE id = ?")
-    .get(id) as CredentialRow | undefined;
-  return row ? rowToCredential(row) : null;
+export async function getCredential(id: string) {
+  const pool = getPool();
+  const res = await pool.query("SELECT * FROM credentials WHERE id = $1", [id]);
+  return res.rows.length > 0 ? rowToCredential(res.rows[0]) : null;
 }
 
-export function createCredential(input: CredentialInput) {
+export async function createCredential(input: CredentialInput) {
+  const pool = getPool();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const { platform, custom_platform_name } = normalizeCredentialInput(input);
 
-  getDb()
-    .prepare(
-      `INSERT INTO credentials
-       (id, platform, custom_platform_name, credential_type, username, email, password_encrypted, description, website_url, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .run(
+  await pool.query(
+    `INSERT INTO credentials
+     (id, platform, custom_platform_name, credential_type, username, email, password_encrypted, description, website_url, created_at, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+    [
       id,
       platform,
       custom_platform_name,
@@ -182,67 +137,68 @@ export function createCredential(input: CredentialInput) {
       input.website_url || null,
       now,
       now,
-    );
-
-  return getCredential(id)!;
-}
-
-export function updateCredential(id: string, input: CredentialInput) {
-  const now = new Date().toISOString();
-  const { platform, custom_platform_name } = normalizeCredentialInput(input);
-
-  getDb()
-    .prepare(
-      `UPDATE credentials SET
-        platform = ?,
-        custom_platform_name = ?,
-        credential_type = ?,
-        username = ?,
-        email = ?,
-        password_encrypted = ?,
-        description = ?,
-        website_url = ?,
-        updated_at = ?
-       WHERE id = ?`,
-    )
-    .run(
-      platform,
-      custom_platform_name,
-      input.credential_type,
-      input.username || null,
-      input.email || null,
-      encrypt(input.password),
-      input.description || null,
-      input.website_url || null,
-      now,
-      id,
-    );
+    ]
+  );
 
   return getCredential(id);
 }
 
-export function deleteCredential(id: string) {
-  getDb().prepare("DELETE FROM credentials WHERE id = ?").run(id);
+export async function updateCredential(id: string, input: CredentialInput) {
+  const pool = getPool();
+  const now = new Date().toISOString();
+  const { platform, custom_platform_name } = normalizeCredentialInput(input);
+
+  await pool.query(
+    `UPDATE credentials SET
+      platform = $1,
+      custom_platform_name = $2,
+      credential_type = $3,
+      username = $4,
+      email = $5,
+      password_encrypted = $6,
+      description = $7,
+      website_url = $8,
+      updated_at = $9
+     WHERE id = $10`,
+    [
+      platform,
+      custom_platform_name,
+      input.credential_type,
+      input.username || null,
+      input.email || null,
+      encrypt(input.password),
+      input.description || null,
+      input.website_url || null,
+      now,
+      id,
+    ]
+  );
+
+  return getCredential(id);
 }
 
-export function createApiToken(name: string, rawToken: string) {
+export async function deleteCredential(id: string) {
+  const pool = getPool();
+  await pool.query("DELETE FROM credentials WHERE id = $1", [id]);
+}
+
+export async function createApiToken(name: string, rawToken: string) {
+  const pool = getPool();
   const id = crypto.randomUUID();
   const tokenHash = bcrypt.hashSync(rawToken, 12);
   const now = new Date().toISOString();
 
-  getDb()
-    .prepare(
-      "INSERT INTO api_tokens (id, token_hash, name, created_at) VALUES (?, ?, ?, ?)",
-    )
-    .run(id, tokenHash, name, now);
+  await pool.query(
+    "INSERT INTO api_tokens (id, token_hash, name, created_at) VALUES ($1, $2, $3, $4)",
+    [id, tokenHash, name, now]
+  );
 
   return { id, name, created_at: now };
 }
 
-export function verifyApiToken(rawToken: string): boolean {
-  const rows = getDb()
-    .prepare("SELECT token_hash FROM api_tokens")
-    .all() as { token_hash: string }[];
+export async function verifyApiToken(rawToken: string): Promise<boolean> {
+  const pool = getPool();
+  const res = await pool.query("SELECT token_hash FROM api_tokens");
 
-  return rows.some((row) => bcrypt.compareSync(rawToken, row.token_hash));
+  return res.rows.some((row: any) => bcrypt.compareSync(rawToken, row.token_hash));
 }

@@ -10,7 +10,7 @@ async function authorize(request: NextRequest): Promise<boolean> {
   const authHeader = request.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
-    return verifyApiToken(token);
+    return await verifyApiToken(token);
   }
 
   return false;
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = request.nextUrl;
-  const credentials = listCredentials({
+  const credentials = await listCredentials({
     platform: searchParams.get("platform") || undefined,
     credential_type: searchParams.get("type") || undefined,
     search: searchParams.get("search") || undefined,
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const credential = createCredential(body);
+    const credential = await createCredential(body);
     return NextResponse.json({ credential }, { status: 201 });
   } catch {
     return NextResponse.json(
