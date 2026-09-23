@@ -48,4 +48,5 @@ export interface PlatformOption {
   id: string;
   label: string;
   color: string;
+  category: "social" | "tools" | "email" | "websites";
 }

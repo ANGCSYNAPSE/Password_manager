@@ -50,6 +50,8 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [extensionToken, setExtensionToken] = useState<string | null>(null);
   const [showExtensionPanel, setShowExtensionPanel] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchCredentials = useCallback(async () => {
     const params = new URLSearchParams();
@@ -77,6 +79,22 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
     }),
     [credentials],
   );
+
+  const filteredCredentials = useMemo(() => {
+    let result = credentials;
+    if (activeTab !== "all") {
+      result = result.filter(c => getPlatform(c.platform).category === activeTab);
+    }
+    return result;
+  }, [credentials, activeTab]);
+
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(filteredCredentials.length / ITEMS_PER_PAGE) || 1;
+  const paginatedCredentials = filteredCredentials.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, search, platformFilter, typeFilter]);
 
   async function handleSave(data: CredentialInput) {
     const url = editing
@@ -257,6 +275,28 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
           ))}
         </div>
 
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {[
+            { id: "all", label: "All" },
+            { id: "websites", label: "Websites" },
+            { id: "tools", label: "Tools & Cloud" },
+            { id: "social", label: "Social" },
+            { id: "email", label: "Email" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                  : "bg-white text-slate-600 hover:bg-slate-100 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-1 flex-wrap items-center gap-3">
             <div className="relative min-w-[200px] flex-1 lg:max-w-xs">
@@ -332,7 +372,7 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
                       Loading credentials...
                     </td>
                   </tr>
-                ) : credentials.length === 0 ? (
+                ) : filteredCredentials.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-5 py-16 text-center">
                       <p className="text-slate-500 dark:text-slate-400">No credentials found</p>
@@ -349,7 +389,7 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
                   </tr>
                 ) : (
                   <AnimatePresence>
-                    {credentials.map((cred, index) => {
+                    {paginatedCredentials.map((cred, index) => {
                       const platform = getPlatform(cred.platform);
                       const platformLabel = getPlatformDisplayName(
                         cred.platform,
@@ -468,6 +508,30 @@ export default function VaultDashboard({ username }: VaultDashboardProps) {
             </table>
           </div>
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4 dark:border-white/10">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Showing <span className="font-medium text-slate-900 dark:text-white">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to <span className="font-medium text-slate-900 dark:text-white">{Math.min(currentPage * ITEMS_PER_PAGE, filteredCredentials.length)}</span> of <span className="font-medium text-slate-900 dark:text-white">{filteredCredentials.length}</span> credentials
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       <CredentialModal
