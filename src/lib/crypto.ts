@@ -20,19 +20,24 @@ export function encrypt(text: string): string {
 }
 
 export function decrypt(payload: string): string {
-  const [ivHex, tagHex, dataHex] = payload.split(":");
-  if (!ivHex || !tagHex || !dataHex) {
-    throw new Error("Invalid encrypted payload");
+  try {
+    const [ivHex, tagHex, dataHex] = payload.split(":");
+    if (!ivHex || !tagHex || !dataHex) {
+      throw new Error("Invalid encrypted payload");
+    }
+    const decipher = createDecipheriv(
+      ALGORITHM,
+      getKey(),
+      Buffer.from(ivHex, "hex"),
+    );
+    decipher.setAuthTag(Buffer.from(tagHex, "hex"));
+    const decrypted = Buffer.concat([
+      decipher.update(Buffer.from(dataHex, "hex")),
+      decipher.final(),
+    ]);
+    return decrypted.toString("utf8");
+  } catch (error) {
+    console.error("Decryption failed:", error);
+    return "DECRYPTION_FAILED_INVALID_KEY";
   }
-  const decipher = createDecipheriv(
-    ALGORITHM,
-    getKey(),
-    Buffer.from(ivHex, "hex"),
-  );
-  decipher.setAuthTag(Buffer.from(tagHex, "hex"));
-  const decrypted = Buffer.concat([
-    decipher.update(Buffer.from(dataHex, "hex")),
-    decipher.final(),
-  ]);
-  return decrypted.toString("utf8");
 }
