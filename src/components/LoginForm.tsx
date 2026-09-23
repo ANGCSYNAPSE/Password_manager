@@ -137,9 +137,6 @@ export default function LoginForm() {
           {loading ? "Signing in..." : "Sign in to Vault"}
         </motion.button>
 
-        <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
-          Default: admin / changeme123 — change in .env.local
-        </p>
       </form>
     </motion.div>
   );
