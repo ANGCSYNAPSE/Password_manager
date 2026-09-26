@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     platform: searchParams.get("platform") || undefined,
     credential_type: searchParams.get("type") || undefined,
     search: searchParams.get("search") || undefined,
+    file_id: searchParams.get("file_id") || undefined,
   });
 
   return NextResponse.json({ credentials });

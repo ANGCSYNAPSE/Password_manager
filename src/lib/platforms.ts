@@ -13,6 +13,7 @@ export const PLATFORMS: PlatformOption[] = [
   { id: "instagram", label: "Instagram", color: "#E4405F", category: "social" },
   { id: "twitter", label: "Twitter / X", color: "#1DA1F2", category: "social" },
   { id: "linkedin", label: "LinkedIn", color: "#0A66C2", category: "social" },
+  { id: "threads", label: "Threads", color: "#000000", category: "social" },
   { id: "discord", label: "Discord", color: "#5865F2", category: "social" },
   { id: "slack", label: "Slack", color: "#4A154B", category: "tools" },
   { id: "notion", label: "Notion", color: "#000000", category: "tools" },
@@ -47,6 +48,20 @@ export const PLATFORMS: PlatformOption[] = [
 ];
 
 export const OTHER_PLATFORM_ID = "other";
+
+// Seeded into every newly created company file so common accounts are
+// ready to fill in right away.
+export const DEFAULT_FILE_PLATFORMS: {
+  platform: string;
+  credential_type: "username_password" | "email_password";
+}[] = [
+  { platform: "gmail", credential_type: "email_password" },
+  { platform: "twitter", credential_type: "username_password" },
+  { platform: "linkedin", credential_type: "username_password" },
+  { platform: "facebook", credential_type: "username_password" },
+  { platform: "instagram", credential_type: "username_password" },
+  { platform: "threads", credential_type: "username_password" },
+];
 
 export const CREDENTIAL_TYPES = [
   { id: "username_password", label: "Username + Password" },

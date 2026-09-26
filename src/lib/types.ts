@@ -7,6 +7,7 @@ export type CredentialType =
 
 export interface Credential {
   id: string;
+  file_id: string | null;
   platform: string;
   custom_platform_name: string | null;
   credential_type: CredentialType;
@@ -21,6 +22,7 @@ export interface Credential {
 
 export interface CredentialRow {
   id: string;
+  file_id: string | null;
   platform: string;
   custom_platform_name: string | null;
   credential_type: CredentialType;
@@ -34,6 +36,7 @@ export interface CredentialRow {
 }
 
 export interface CredentialInput {
+  file_id?: string | null;
   platform: string;
   custom_platform_name?: string;
   credential_type: CredentialType;
@@ -42,6 +45,20 @@ export interface CredentialInput {
   password: string;
   description?: string;
   website_url?: string;
+}
+
+export interface VaultFile {
+  id: string;
+  name: string;
+  description: string | null;
+  credential_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VaultFileInput {
+  name: string;
+  description?: string;
 }
 
 export interface PlatformOption {

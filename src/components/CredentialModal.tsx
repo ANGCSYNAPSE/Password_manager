@@ -8,33 +8,40 @@ import {
   isOtherPlatform,
   PLATFORMS,
 } from "@/lib/platforms";
-import type { Credential, CredentialInput } from "@/lib/types";
+import type { Credential, CredentialInput, VaultFile } from "@/lib/types";
 
 interface CredentialModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (data: CredentialInput) => Promise<void>;
   credential?: Credential | null;
+  files: VaultFile[];
+  defaultFileId?: string | null;
 }
 
-const emptyForm: CredentialInput = {
-  platform: "other",
-  custom_platform_name: "",
-  credential_type: "username_password",
-  username: "",
-  email: "",
-  password: "",
-  description: "",
-  website_url: "",
-};
+function emptyForm(defaultFileId?: string | null): CredentialInput {
+  return {
+    file_id: defaultFileId ?? null,
+    platform: "other",
+    custom_platform_name: "",
+    credential_type: "username_password",
+    username: "",
+    email: "",
+    password: "",
+    description: "",
+    website_url: "",
+  };
+}
 
 export default function CredentialModal({
   open,
   onClose,
   onSave,
   credential,
+  files,
+  defaultFileId,
 }: CredentialModalProps) {
-  const [form, setForm] = useState<CredentialInput>(emptyForm);
+  const [form, setForm] = useState<CredentialInput>(() => emptyForm(defaultFileId));
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState("");
@@ -42,6 +49,7 @@ export default function CredentialModal({
   useEffect(() => {
     if (credential) {
       setForm({
+        file_id: credential.file_id,
         platform: credential.platform === "custom" ? "other" : credential.platform,
         custom_platform_name: credential.custom_platform_name || "",
         credential_type: credential.credential_type,
@@ -52,11 +60,11 @@ export default function CredentialModal({
         website_url: credential.website_url || "",
       });
     } else {
-      setForm(emptyForm);
+      setForm(emptyForm(defaultFileId));
     }
     setShowPassword(false);
     setFormError("");
-  }, [credential, open]);
+  }, [credential, open, defaultFileId]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -116,6 +124,26 @@ export default function CredentialModal({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-500 dark:text-slate-400">
+                  Company file
+                </label>
+                <select
+                  value={form.file_id ?? ""}
+                  onChange={(e) =>
+                    setForm({ ...form, file_id: e.target.value || null })
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-slate-400 focus:outline-none dark:border-white/10 dark:bg-slate-800/80 dark:text-white dark:focus:border-slate-500"
+                >
+                  <option value="">No file (unfiled)</option>
+                  {files.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1.5 block text-xs font-medium text-slate-500 dark:text-slate-400">

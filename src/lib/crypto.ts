@@ -21,8 +21,12 @@ export function encrypt(text: string): string {
 
 export function decrypt(payload: string): string {
   try {
-    const [ivHex, tagHex, dataHex] = payload.split(":");
-    if (!ivHex || !tagHex || !dataHex) {
+    const parts = payload.split(":");
+    if (parts.length !== 3) {
+      throw new Error("Invalid encrypted payload");
+    }
+    const [ivHex, tagHex, dataHex] = parts;
+    if (!ivHex || !tagHex) {
       throw new Error("Invalid encrypted payload");
     }
     const decipher = createDecipheriv(
