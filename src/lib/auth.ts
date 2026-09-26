@@ -5,7 +5,10 @@ const COOKIE_NAME = "vault_session";
 const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 days
 
 function getSecret(): Uint8Array {
-  const secret = process.env.SESSION_SECRET || "dev-session-secret-change-me";
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error("SESSION_SECRET environment variable is required");
+  }
   return new TextEncoder().encode(secret);
 }
 

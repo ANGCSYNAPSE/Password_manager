@@ -3,8 +3,10 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "crypt
 const ALGORITHM = "aes-256-gcm";
 
 function getKey(): Buffer {
-  const secret =
-    process.env.ENCRYPTION_KEY || "credential-vault-dev-key-change-me";
+  const secret = process.env.ENCRYPTION_KEY;
+  if (!secret) {
+    throw new Error("ENCRYPTION_KEY environment variable is required");
+  }
   return scryptSync(secret, "vault-salt", 32);
 }
 

@@ -67,13 +67,17 @@ export async function verifyAdmin(username: string, password: string): Promise<b
   const res = await pool.query("SELECT password_hash FROM admin WHERE username = $1", [username]);
   
   if (res.rows.length === 0) {
-      if (username === (process.env.ADMIN_USERNAME || "admin")) {
-          const defaultPassword = process.env.ADMIN_PASSWORD || "changeme123";
-          if (password === defaultPassword) {
-            const passwordHash = bcrypt.hashSync(defaultPassword, 12);
-            await pool.query("INSERT INTO admin (username, password_hash) VALUES ($1, $2)", [username, passwordHash]);
-            return true;
-          }
+      const bootstrapUsername = process.env.ADMIN_USERNAME;
+      const bootstrapPassword = process.env.ADMIN_PASSWORD;
+      if (
+        bootstrapUsername &&
+        bootstrapPassword &&
+        username === bootstrapUsername &&
+        password === bootstrapPassword
+      ) {
+        const passwordHash = bcrypt.hashSync(bootstrapPassword, 12);
+        await pool.query("INSERT INTO admin (username, password_hash) VALUES ($1, $2)", [username, passwordHash]);
+        return true;
       }
       return false;
   }

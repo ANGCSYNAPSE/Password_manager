@@ -4,7 +4,10 @@ import { jwtVerify } from "jose";
 const COOKIE_NAME = "vault_session";
 
 function getSecret(): Uint8Array {
-  const secret = process.env.SESSION_SECRET || "dev-session-secret-change-me";
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error("SESSION_SECRET environment variable is required");
+  }
   return new TextEncoder().encode(secret);
 }
 
